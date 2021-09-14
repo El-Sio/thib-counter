@@ -1,0 +1,7 @@
+{
+    "timer_url": "https://japansio.info/api/thibTimer/timer.json",
+    "saveTimer_url": "https://japansio.info/api/thibTimer/thibTimerPost.php",
+    "MAX_TIMER" : 7200000, 
+    "big": 20,
+    "small": 10
+}

@@ -1,0 +1,34 @@
+<div class='timer'>
+  <h2>Il te reste :</h2>
+  <h1>{{timer}}</h1>
+<h2>de Switch cette semaine</h2></div>
+
+<div class="gauge">
+  <div class="gauge__body">
+    <div class="gauge__fill"></div>
+    <div class="gauge__cover"></div>
+  </div>
+</div>
+
+<div *ngIf="!timesUp" class="noblink">Temps Disponible</div><div *ngIf="timesUp" class="blink">Temps écoulé</div>
+
+<div class='control'>
+  <button class="btn" [disabled] = "isReading || isPlaying" (click) = startReading()>Lecture Start</button><button class="btn red" [disabled] = !isReading (click)= stopReading()>Lecture Stop</button>
+</div>
+
+<div class='control'>
+  <button class="btn orange" [disabled] = "isReading || isPlaying"  (click) = smallPenalty()>Petite Pénalité</button><button class="btn red" [disabled] = "isReading || isPlaying"  (click) = bigPenalty()>Grande Pénalité</button>
+</div>
+
+<div class="action">
+  <button (click) = startPlaying() [disabled] = "isReading || timesUp || isPlaying" class="btn play">Switch Start</button><button (click) = stopPlaying() [disabled] = "!isPlaying" class="btn red">Switch Stop</button>
+</div>
+
+<div class = 'admin'>
+  <button class="btn red" [disabled] = "isReading || isPlaying"  (click) = resetTimer()>Réinitialiser</button>
+  <button class="btn play" [disabled] = " !hasChanged || isReading || isPlaying" (click) = saveTimer()>Enregistrer</button>
+</div>
+
+<div class = 'message'>
+  <p>{{message}}</p>
+</div>
