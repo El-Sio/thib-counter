@@ -1,5 +1,16 @@
 # ThibCounter
 
+A simple counter app to track my son's reading time in exchange for video game time.
+
+Training with Angular / Observables / CSS etc.
+
+This projects has a minimal back-end :
+
+A json file hosted on the web containing the current timer value (timer.json)
+A php script to update the timer value on the server (thibTimerPost.php)
+
+URLs for both those ressources can be modified in the config.json file.
+
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.2.9.
 
 ## Development server
@@ -13,15 +24,3 @@ Run `ng generate component component-name` to generate a new component. You can 
 ## Build
 
 Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
