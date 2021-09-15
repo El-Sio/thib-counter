@@ -193,6 +193,7 @@ setGaugeValue(gauge, value) : void {
     this.timersService.setTimerValue(data).subscribe(v => {
       this.message = 'donnée enregistrée : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
       this.hasChanged = false;
+      this.timermiliHistory = [];
     }, err => {
       this.message = 'erreur d‘enregistrement des données ' + err.message;
     });
