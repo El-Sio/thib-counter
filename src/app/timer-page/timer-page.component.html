@@ -38,3 +38,7 @@
 <div class = 'message'>
   <p>{{message}}</p>
 </div>
+
+<div class = 'admin'>
+  <button class="btn red" [disabled] = "isReading || isPlaying"  (click) = resetTimer()>Réinitialiser</button>
+</div>
