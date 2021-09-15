@@ -3,8 +3,4 @@ export interface thibTimerValue {
     id: number;
     name: string;
   }
-
-  export interface thibTimerchild {
-    id: number;
-    name: string;
-  }
+  

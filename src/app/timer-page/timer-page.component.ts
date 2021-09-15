@@ -1,9 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { cp } from '@angular/core/src/render3';
-import { interval, fromEvent, Observable, BehaviorSubject } from 'rxjs';
-import { map, takeUntil } from 'rxjs/operators';
+import { interval } from 'rxjs';
 import { AppInitServiceService } from '../app-init-service.service';
-import { thibTimerValue, thibTimerchild } from '../data-model';
+import { thibTimerValue } from '../data-model';
 import { TimerServiceService } from '../timer-service.service';
 
 @Component({
@@ -16,14 +14,16 @@ export class TimerPageComponent implements OnInit {
 
   public timer = '';
   public timermili = 0
+  public timermiliHistory : number[] =[]
+  public historyIndex = 0;
   public message = '';
   public hasChanged = false;
   public isReading = false;
   public timesUp = false;
   public isPlaying = false;
-  public selectedChild: thibTimerchild = {"id": 0, "name":"--"};
-  public children: thibTimerchild[] = [];
+  public selectedChild: thibTimerValue = {"id": 0, "name":"--", "timer": 36000};
   public childrenTime: thibTimerValue[] = [];
+  public previousChild: thibTimerValue;
   public readingsub;
   public playingsub;
   public small = AppInitServiceService.settings.small; // minutes
@@ -61,14 +61,11 @@ setGaugeValue(gauge, value) : void {
   constructor(public timersService : TimerServiceService) { }
 
   ngOnInit() {
-
-    this.timersService.getChildren().subscribe(c => {
-      this.children = c;
-      this.selectedChild = c[0];
       this.timersService.getTimerValue().subscribe(v => {
         this.childrenTime = v;
-        let filterchild = this.childrenTime.filter(i => i.name === this.selectedChild.name);
-        this.timermili = filterchild[0].timer
+        this.selectedChild = this.childrenTime[0];
+        this.previousChild = this.selectedChild;
+        this.timermili = this.selectedChild.timer;
         this.timer = this.timeToString(this.timermili);
         this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
         this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
@@ -76,35 +73,30 @@ setGaugeValue(gauge, value) : void {
       }, err => {
         this.message = 'erreur serveur : ' + err.message;
       });
-    });
 
      this.gaugeElement = document.querySelector(".gauge");
       this.isPlaying = false;
 
   }
 
-  public onChange(child): void {
-
-        this.timesUp = false;
+  public onChange(value: thibTimerValue): void {
+      this.timesUp = false;
         this.hasChanged = false;
+        this.timermiliHistory = [];
         this.isReading = false;
         this.isPlaying = false;
-        this.timersService.getTimerValue().subscribe(v => {
-    
-          this.childrenTime = v;
-            let filterchild = this.childrenTime.filter(i => i.name === this.selectedChild.name);
-          this.timermili = filterchild[0].timer;
+        this.selectedChild = value;
+        this.timermili = this.selectedChild.timer;
           this.timer = this.timeToString(this.timermili);
           this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
           this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
           if (this.timermili === 0) {this.timesUp = true}
-        }, err => {
-          this.message = 'erreur serveur : ' + err.message;
-        })
-      } 
+          this.previousChild = this.selectedChild;
+    }
 
   public startReading(): void {
     this.hasChanged = true;
+    this.timermiliHistory.push(this.timermili);
     this.isReading = true;
     this.timesUp = false;
     this.readingsub = this.second$.
@@ -124,6 +116,7 @@ setGaugeValue(gauge, value) : void {
 
   public startPlaying(): void {
     this.hasChanged = true;
+    this.timermiliHistory.push(this.timermili);
     this.isPlaying = true;
     this.isReading = false;
     this.playingsub = this.playseconds$.
@@ -146,6 +139,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   public smallPenalty(): void {
+    this.timermiliHistory.push(this.timermili);
     this.timermili -= this.small * 60 * 1000;
     if (this.timermili <= 0 ) { 
       this.timermili = 0;
@@ -157,6 +151,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   public bigPenalty(): void {
+    this.timermiliHistory.push(this.timermili);
     this.timermili -= this.big * 60 * 1000;
     if (this.timermili <= 0 ) { 
       this.timermili = 0;
@@ -175,11 +170,26 @@ setGaugeValue(gauge, value) : void {
     this.hasChanged = true;
   }
 
+  public cancelChange(): void {
+    this.historyIndex = this.timermiliHistory.length;
+    if (this.timermiliHistory.length !==0 ) {
+      this.timermili = this.timermiliHistory[this.historyIndex - 1];
+      if (this.timermili <= 0) { this.timesUp = true;}
+      if (this.timermili > 0) { this.timesUp = false;}
+      this.timer = this.timeToString(this.timermili);
+      this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
+      this.timermiliHistory = this.timermiliHistory.slice(0,this.historyIndex-1);
+      this.historyIndex -=1;
+    }
+    if (this.timermiliHistory.length ===0 ) {
+      this.hasChanged = false;
+    }
+  }
+
   public saveTimer(): void {
 
     this.childrenTime.forEach(c => {if(c.id === this.selectedChild.id) c.timer = this.timermili})
     let data = JSON.stringify(this.childrenTime);
-    console.log(data);
     this.timersService.setTimerValue(data).subscribe(v => {
       this.message = 'donnée enregistrée : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
       this.hasChanged = false;

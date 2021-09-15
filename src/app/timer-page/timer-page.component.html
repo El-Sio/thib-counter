@@ -1,13 +1,13 @@
-<div *ngIf="children.length !=0" class="child">
-  <select [disabled] = "isReading || isPlaying" [(ngModel)]="selectedChild" (ngModelChange)="onChange($event)" class="btn play">
-    <option *ngFor="let c of children" [ngValue]="c">{{c.name}}</option>
+<div *ngIf="childrenTime.length !=0" class="child">
+  <select id="childSelect" [disabled] = "isReading || isPlaying || hasChanged" [(ngModel)]="selectedChild" (ngModelChange)="onChange($event)" class="btn play">
+    <option *ngFor="let c of childrenTime" [ngValue]="c">{{c.name}}</option>
     </select>    
 </div>
 
 <div class='timer'>
-  <h2>{{selectedChild!.name}}, Il te reste :</h2>
-  <h1>{{timer}}</h1>
-<h2>de Switch cette semaine</h2></div>
+  <h3>{{selectedChild!.name}}, Il te reste :</h3>
+  <h2>{{timer}}</h2>
+<h3>de Switch cette semaine</h3></div>
 
 <div class="gauge">
   <div class="gauge__body">
@@ -31,7 +31,7 @@
 </div>
 
 <div class = 'admin'>
-  <button class="btn red" [disabled] = "isReading || isPlaying"  (click) = resetTimer()>Réinitialiser</button>
+  <button class="btn red" [disabled] = "isReading || isPlaying || timermiliHistory.length ===0 "  (click) = cancelChange()>Annuler ({{timermiliHistory.length}})</button>
   <button class="btn play" [disabled] = " !hasChanged || isReading || isPlaying" (click) = saveTimer()>Enregistrer</button>
 </div>
 

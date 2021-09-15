@@ -1,9 +1,8 @@
-html, body, h1, h2, .btn, .child {
+html, body, h1, h2, h3, .btn, .child {
     text-align: center;
     font-family: "Roboto", sans-serif;
     margin: 10px;
 }
-
 
 .control, .admin, .action {
     text-align: center;
