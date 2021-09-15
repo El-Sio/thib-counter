@@ -1,4 +1,4 @@
-html, body, h1, h2, .btn {
+html, body, h1, h2, .btn, .child {
     text-align: center;
     font-family: "Roboto", sans-serif;
     margin: 10px;
@@ -11,7 +11,6 @@ html, body, h1, h2, .btn {
 
 .message {
     text-align: center;
-    margin-top: 20px;
     font-family: "Roboto", sans-serif;
 }
 

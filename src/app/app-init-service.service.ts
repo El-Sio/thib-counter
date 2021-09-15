@@ -5,6 +5,7 @@ import { reject } from 'q';
 export interface IAppConfig {
   timer_url: string;
   saveTimer_url: string;
+  children_url: string;
   MAX_TIMER: number;
   big: number;
   small: number;

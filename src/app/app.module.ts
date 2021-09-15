@@ -2,6 +2,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { AppInitServiceService } from './app-init-service.service';
 import {HttpClientModule} from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 
 import { AppComponent } from './app.component';
 import { TimerPageComponent } from './timer-page/timer-page.component';
@@ -15,11 +16,12 @@ export function initializeApp(appInitService: AppInitServiceService) {
 @NgModule({
   declarations: [
     AppComponent,
-    TimerPageComponent
+    TimerPageComponent,
   ],
   imports: [
     BrowserModule,
-    HttpClientModule
+    HttpClientModule,
+    FormsModule
   ],
   providers: [
     AppInitServiceService,

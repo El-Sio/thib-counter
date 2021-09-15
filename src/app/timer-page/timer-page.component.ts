@@ -3,7 +3,7 @@ import { cp } from '@angular/core/src/render3';
 import { interval, fromEvent, Observable, BehaviorSubject } from 'rxjs';
 import { map, takeUntil } from 'rxjs/operators';
 import { AppInitServiceService } from '../app-init-service.service';
-import { thibTimerValue } from '../data-model';
+import { thibTimerValue, thibTimerchild } from '../data-model';
 import { TimerServiceService } from '../timer-service.service';
 
 @Component({
@@ -15,11 +15,15 @@ import { TimerServiceService } from '../timer-service.service';
 export class TimerPageComponent implements OnInit {
 
   public timer = '';
+  public timermili = 0
   public message = '';
   public hasChanged = false;
   public isReading = false;
   public timesUp = false;
   public isPlaying = false;
+  public selectedChild: thibTimerchild = {"id": 0, "name":"--"};
+  public children: thibTimerchild[] = [];
+  public childrenTime: thibTimerValue[] = [];
   public readingsub;
   public playingsub;
   public small = AppInitServiceService.settings.small; // minutes
@@ -49,7 +53,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   if(value > .8) {
-    gauge.querySelector(".gauge__fill").style.background = '#1565c0';
+    gauge.querySelector(".gauge__fill").style.background = '#00c3e3';
   }
 
 }
@@ -58,20 +62,54 @@ setGaugeValue(gauge, value) : void {
 
   ngOnInit() {
 
-    this.timersService.getTimerValue().subscribe(v => {
-      this.thibTimer = v;
-      this.timer = this.timeToString(this.thibTimer.timer);
-      this.setGaugeValue(this.gaugeElement, (this.thibTimer.timer / this.MAXTIMER));
-      this.message = 'donnée reçue du serveur : ' + this.timeToString(this.thibTimer.timer);
-      if (this.thibTimer.timer === 0) {this.timesUp = true}
-    }, err => {
-      this.message = 'erreur serveur : ' + err.message;
+    this.timersService.getChildren().subscribe(c => {
+      this.children = c;
+      console.log(this.children);
+      this.selectedChild = c[0];
+      console.log('selected', this.selectedChild.name);
+      this.timersService.getTimerValue().subscribe(v => {
+        this.childrenTime = v;
+        console.log('server',this.childrenTime);
+        let filterchild = this.childrenTime.filter(i => i.name === this.selectedChild.name);
+        console.log('filter', filterchild);
+        this.timermili = filterchild[0].timer
+        console.log('timermili',this.timermili);
+        this.timer = this.timeToString(this.timermili);
+        this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
+        this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
+        if (this.timermili === 0) {this.timesUp = true}
+      }, err => {
+        this.message = 'erreur serveur : ' + err.message;
+      });
     });
+
      this.gaugeElement = document.querySelector(".gauge");
       this.isPlaying = false;
 
   }
 
+  public onChange(child): void {
+
+        this.timesUp = false;
+        this.hasChanged = false;
+        this.isReading = false;
+        this.isPlaying = false;
+        console.log('selected', child);
+        this.timersService.getTimerValue().subscribe(v => {
+    
+          this.childrenTime = v;
+            console.log('server',this.childrenTime);
+            let filterchild = this.childrenTime.filter(i => i.name === this.selectedChild.name);
+            console.log('filter', filterchild);
+          this.timermili = filterchild[0].timer;
+          this.timer = this.timeToString(this.timermili);
+          this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
+          this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
+          if (this.timermili === 0) {this.timesUp = true}
+        }, err => {
+          this.message = 'erreur serveur : ' + err.message;
+        })
+      } 
 
   public startReading(): void {
     this.hasChanged = true;
@@ -79,10 +117,10 @@ setGaugeValue(gauge, value) : void {
     this.timesUp = false;
     this.readingsub = this.second$.
     subscribe( tick => {
-      this.thibTimer.timer += 1000;
-      if (this.thibTimer.timer >= this.MAXTIMER) {this.thibTimer.timer = this.MAXTIMER}
-      this.timer = this.timeToString(this.thibTimer.timer);
-      this.setGaugeValue(this.gaugeElement, (this.thibTimer.timer / this.MAXTIMER));
+      this.timermili += 1000;
+      if (this.timermili >= this.MAXTIMER) {this.timermili = this.MAXTIMER}
+      this.timer = this.timeToString(this.timermili);
+      this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
     });
   }
 
@@ -98,14 +136,14 @@ setGaugeValue(gauge, value) : void {
     this.isReading = false;
     this.playingsub = this.playseconds$.
     subscribe( tick => {
-      this.thibTimer.timer -=1000;
-      if (this.thibTimer.timer <= 0) {
-        this.thibTimer.timer = 0;
+      this.timermili -=1000;
+      if (this.timermili <= 0) {
+        this.timermili = 0;
         this.timesUp = true;
         this.stopPlaying();
       }
-      this.timer = this.timeToString(this.thibTimer.timer);
-      this.setGaugeValue(this.gaugeElement, (this.thibTimer.timer / this.MAXTIMER));
+      this.timer = this.timeToString(this.timermili);
+      this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
     })
   }
 
@@ -116,40 +154,42 @@ setGaugeValue(gauge, value) : void {
   }
 
   public smallPenalty(): void {
-    this.thibTimer.timer -= this.small * 60 * 1000;
-    if (this.thibTimer.timer <= 0 ) { 
-      this.thibTimer.timer = 0;
+    this.timermili -= this.small * 60 * 1000;
+    if (this.timermili <= 0 ) { 
+      this.timermili = 0;
       this.timesUp = true;
      }
-    this.timer = this.timeToString(this.thibTimer.timer);
-    this.setGaugeValue(this.gaugeElement, (this.thibTimer.timer / this.MAXTIMER));
+    this.timer = this.timeToString(this.timermili);
+    this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
     this.hasChanged = true;
   }
 
   public bigPenalty(): void {
-    this.thibTimer.timer -= this.big * 60 * 1000;
-    if (this.thibTimer.timer <= 0 ) { 
-      this.thibTimer.timer = 0;
+    this.timermili -= this.big * 60 * 1000;
+    if (this.timermili <= 0 ) { 
+      this.timermili = 0;
       this.timesUp = true;
      }
-    this.timer = this.timeToString(this.thibTimer.timer);
-    this.setGaugeValue(this.gaugeElement, (this.thibTimer.timer / this.MAXTIMER));
+    this.timer = this.timeToString(this.timermili);
+    this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
     this.hasChanged = true;
   }
 
   public resetTimer(): void {
     this.timesUp = false;
-    this.thibTimer.timer = 60 * 60 * 1000;
-    this.timer = this.timeToString(this.thibTimer.timer);
-    this.setGaugeValue(this.gaugeElement, (this.thibTimer.timer / this.MAXTIMER));
+    this.timermili = 60 * 60 * 1000;
+    this.timer = this.timeToString(this.timermili);
+    this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
     this.hasChanged = true;
   }
 
   public saveTimer(): void {
-    let data = JSON.stringify(this.thibTimer);
+
+    this.childrenTime.forEach(c => {if(c.id === this.selectedChild.id) c.timer = this.timermili})
+    let data = JSON.stringify(this.childrenTime);
     console.log(data);
     this.timersService.setTimerValue(data).subscribe(v => {
-      this.message = 'donnée enregistrée sur le serveur : ' + this.timeToString(this.thibTimer.timer);
+      this.message = 'donnée enregistrée : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
       this.hasChanged = false;
     }, err => {
       this.message = 'erreur d‘enregistrement des données ' + err.message;

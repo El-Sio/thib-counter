@@ -1,5 +1,11 @@
+<div *ngIf="children.length !=0" class="child">
+  <select [disabled] = "isReading || isPlaying" [(ngModel)]="selectedChild" (ngModelChange)="onChange($event)" class="btn play">
+    <option *ngFor="let c of children" [ngValue]="c">{{c.name}}</option>
+    </select>    
+</div>
+
 <div class='timer'>
-  <h2>Il te reste :</h2>
+  <h2>{{selectedChild!.name}}, Il te reste :</h2>
   <h1>{{timer}}</h1>
 <h2>de Switch cette semaine</h2></div>
 
