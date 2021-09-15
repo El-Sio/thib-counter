@@ -64,16 +64,11 @@ setGaugeValue(gauge, value) : void {
 
     this.timersService.getChildren().subscribe(c => {
       this.children = c;
-      console.log(this.children);
       this.selectedChild = c[0];
-      console.log('selected', this.selectedChild.name);
       this.timersService.getTimerValue().subscribe(v => {
         this.childrenTime = v;
-        console.log('server',this.childrenTime);
         let filterchild = this.childrenTime.filter(i => i.name === this.selectedChild.name);
-        console.log('filter', filterchild);
         this.timermili = filterchild[0].timer
-        console.log('timermili',this.timermili);
         this.timer = this.timeToString(this.timermili);
         this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
         this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
@@ -94,13 +89,10 @@ setGaugeValue(gauge, value) : void {
         this.hasChanged = false;
         this.isReading = false;
         this.isPlaying = false;
-        console.log('selected', child);
         this.timersService.getTimerValue().subscribe(v => {
     
           this.childrenTime = v;
-            console.log('server',this.childrenTime);
             let filterchild = this.childrenTime.filter(i => i.name === this.selectedChild.name);
-            console.log('filter', filterchild);
           this.timermili = filterchild[0].timer;
           this.timer = this.timeToString(this.timermili);
           this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
