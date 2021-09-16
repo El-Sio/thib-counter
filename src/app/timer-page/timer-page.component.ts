@@ -85,7 +85,16 @@ setGaugeValue(gauge, value) : void {
 
   }
 
-  public onChange(value: thibTimerValue): void {
+  public onChange(value: any): void {
+
+    if(value === 'add_child') {
+      let childname = window.prompt('Veuillez entrer le nom de l‘enfant :');
+      this.childrenTime.push({name:childname, id:Math.round(Math.random()*100 + 5), timer:3600000});
+      this.selectedChild = this.childrenTime.filter(c => c.name === childname)[0];
+      this.saveTimer();
+      this.onChange(this.selectedChild);
+    } else {
+
       this.timesUp = false;
         this.hasChanged = false;
         this.timermiliHistory = [];
@@ -100,6 +109,15 @@ setGaugeValue(gauge, value) : void {
           if (this.timermili === this.MAXTIMER) {this.isMaxTime = true;}
           this.previousChild = this.selectedChild;
     }
+    }
+
+  public removeChild(): void {
+    if (window.confirm('êtes vous sûr de vouloir supprimer le compteur de '+ this.selectedChild.name + ' ?')) {
+    this.childrenTime = this.childrenTime.filter(c => c.name !== this.selectedChild.name);
+    this.saveTimer();
+    this.onChange(this.childrenTime[0]);
+  }
+  }
 
   public startReading(): void {
     this.hasChanged = true;

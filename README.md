@@ -11,6 +11,9 @@ A php script to update the timer value on the server (thibTimerPost.php)
 
 URLs for both those ressources can be modified in the config.json file.
 
+**NEW**
+- Now with Multi-child support (each child has his own counter in the timer.json file)
+
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.2.9.
 
 ## Development server

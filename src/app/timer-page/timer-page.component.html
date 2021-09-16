@@ -1,6 +1,7 @@
 <div *ngIf="childrenTime.length !=0" class="child">
   <select id="childSelect" [disabled] = "isReading || isPlaying || hasChanged" [(ngModel)]="selectedChild" (ngModelChange)="onChange($event)" class="btn play">
     <option *ngFor="let c of childrenTime" [ngValue]="c">{{c.name}}</option>
+    <option value="add_child">+ Ajouter un enfant</option>
     </select>    
 </div>
 
@@ -40,5 +41,5 @@
 </div>
 
 <div class = 'admin'>
-  <button class="btn red" [disabled] = "isReading || isPlaying"  (click) = resetTimer()>Réinitialiser</button>
+  <button class="btn red" [disabled] = "isReading || isPlaying"  (click) = resetTimer()>Réinitialiser</button>  <button class="btn red" [disabled] = "isReading || isPlaying"  (click) = removeChild()>Supprimer</button>
 </div>
