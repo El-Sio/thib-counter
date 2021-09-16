@@ -21,6 +21,7 @@ export class TimerPageComponent implements OnInit {
   public isReading = false;
   public timesUp = false;
   public isPlaying = false;
+  public isMaxTime = false;
   public selectedChild: thibTimerValue = {"id": 0, "name":"--", "timer": 36000};
   public childrenTime: thibTimerValue[] = [];
   public previousChild: thibTimerValue;
@@ -48,8 +49,12 @@ setGaugeValue(gauge, value) : void {
 
   gauge.querySelector(".gauge__fill").style.background = '#2ecc71';
 
-  if(value < .3) {
+  if(value < .25) {
     gauge.querySelector(".gauge__fill").style.background = '#c62828';
+  }
+
+  if(value >= .25 && value <= .4) {
+    gauge.querySelector(".gauge__fill").style.background = '#d35400';
   }
 
   if(value > .8) {
@@ -70,6 +75,7 @@ setGaugeValue(gauge, value) : void {
         this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
         this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
         if (this.timermili === 0) {this.timesUp = true}
+        if (this.timermili === this.MAXTIMER) {this.isMaxTime = true;}
       }, err => {
         this.message = 'erreur serveur : ' + err.message;
       });
@@ -91,6 +97,7 @@ setGaugeValue(gauge, value) : void {
           this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
           this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
           if (this.timermili === 0) {this.timesUp = true}
+          if (this.timermili === this.MAXTIMER) {this.isMaxTime = true;}
           this.previousChild = this.selectedChild;
     }
 
@@ -102,7 +109,11 @@ setGaugeValue(gauge, value) : void {
     this.readingsub = this.second$.
     subscribe( tick => {
       this.timermili += 1000;
-      if (this.timermili >= this.MAXTIMER) {this.timermili = this.MAXTIMER}
+      if (this.timermili >= this.MAXTIMER) {
+        this.timermili = this.MAXTIMER;
+        this.isMaxTime = true;
+        this.stopReading();
+      }
       this.timer = this.timeToString(this.timermili);
       this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
     });
@@ -115,6 +126,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   public startPlaying(): void {
+    this.isMaxTime = false;
     this.hasChanged = true;
     this.timermiliHistory.push(this.timermili);
     this.isPlaying = true;
@@ -139,6 +151,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   public smallPenalty(): void {
+    this.isMaxTime = false;
     this.timermiliHistory.push(this.timermili);
     this.timermili -= this.small * 60 * 1000;
     if (this.timermili <= 0 ) { 
@@ -150,12 +163,13 @@ setGaugeValue(gauge, value) : void {
     this.hasChanged = true;
   }
 
-  public bigPenalty(): void {
+  public smallBonus(): void {
+    this.timesUp = false;
     this.timermiliHistory.push(this.timermili);
-    this.timermili -= this.big * 60 * 1000;
-    if (this.timermili <= 0 ) { 
-      this.timermili = 0;
-      this.timesUp = true;
+    this.timermili += this.small * 60 * 1000;
+    if (this.timermili >= this.MAXTIMER ) { 
+      this.timermili = this.MAXTIMER;
+      this.isMaxTime = true;
      }
     this.timer = this.timeToString(this.timermili);
     this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
@@ -164,6 +178,8 @@ setGaugeValue(gauge, value) : void {
 
   public resetTimer(): void {
     this.timesUp = false;
+    this.isMaxTime = false;
+    this.timermiliHistory.push(this.timermili);
     this.timermili = 60 * 60 * 1000;
     this.timer = this.timeToString(this.timermili);
     this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));

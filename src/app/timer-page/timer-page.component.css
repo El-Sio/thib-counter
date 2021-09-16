@@ -19,11 +19,37 @@ html, body, h1, h2, h3, .btn, .child {
     text-align: center;
     font-weight: bold;
     margin-bottom: 10px;
+  }
+  
+  .noblinkmax {
+    font-family: "Roboto", sans-serif;
+    color:#00c3e3;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 10px;
   } 
 
 .blink {
     font-family: "Roboto", sans-serif;
     color:#e60012;
+    text-align: center;
+    font-weight: bold;
+    animation: animate 1.5s linear infinite;
+    margin-bottom: 10px;
+  } 
+
+  .blinkmax {
+    font-family: "Roboto", sans-serif;
+    color:#00c3e3;
+    text-align: center;
+    font-weight: bold;
+    animation: animate 1.5s linear infinite;
+    margin-bottom: 10px;
+  } 
+
+  .blinkread {
+    font-family: "Roboto", sans-serif;
+    color:#2ecc71;
     text-align: center;
     font-weight: bold;
     animation: animate 1.5s linear infinite;

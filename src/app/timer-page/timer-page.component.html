@@ -16,14 +16,14 @@
   </div>
 </div>
 
-<div *ngIf="!timesUp" class="noblink">Temps Disponible</div><div *ngIf="timesUp" class="blink">Temps écoulé</div>
+<div *ngIf="!timesUp && !isMaxTime && !isPlaying && !isReading" class="noblink">Temps Disponible</div><div *ngIf="timesUp" class="blink">Temps écoulé</div><div *ngIf="isMaxTime" class="noblinkmax">Temps Maximum Atteint</div><div *ngIf="isPlaying" class="blinkmax">Jeu en cours...</div><div *ngIf="isReading" class="blinkread">Lecture en cours...</div>
 
 <div class='control'>
-  <button class="btn" [disabled] = "isReading || isPlaying" (click) = startReading()>Lecture Start</button><button class="btn red" [disabled] = !isReading (click)= stopReading()>Lecture Stop</button>
+  <button class="btn" [disabled] = "isReading || isPlaying || isMaxTime" (click) = startReading()>Lecture Start</button><button class="btn red" [disabled] = !isReading (click)= stopReading()>Lecture Stop</button>
 </div>
 
 <div class='control'>
-  <button class="btn orange" [disabled] = "isReading || isPlaying"  (click) = smallPenalty()>Petite Pénalité</button><button class="btn red" [disabled] = "isReading || isPlaying"  (click) = bigPenalty()>Grande Pénalité</button>
+  <button class="btn" [disabled] = "isReading || isPlaying || isMaxTime"  (click) = smallBonus()>Bonus +10min</button><button class="btn red" [disabled] = "isReading || isPlaying || timesUp"  (click) = smallPenalty()>Malus -10min</button>
 </div>
 
 <div class="action">
