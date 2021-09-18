@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { tick } from '@angular/core/src/render3';
 import { interval } from 'rxjs';
 import { AppInitServiceService } from '../app-init-service.service';
 import { thibTimerValue } from '../data-model';
@@ -22,7 +23,8 @@ export class TimerPageComponent implements OnInit {
   public timesUp = false;
   public isPlaying = false;
   public isMaxTime = false;
-  public selectedChild: thibTimerValue = {"id": 0, "name":"--", "timer": 36000};
+  public selectedChild: thibTimerValue = 
+  {"id": 0, "name":"--", "timer": 36000, "isReading": false, "isPlaying": false, "playingStart": 0, "readingStart": 0};
   public childrenTime: thibTimerValue[] = [];
   public previousChild: thibTimerValue;
   public readingsub;
@@ -71,11 +73,15 @@ setGaugeValue(gauge, value) : void {
         this.selectedChild = this.childrenTime[0];
         this.previousChild = this.selectedChild;
         this.timermili = this.selectedChild.timer;
+        this.isReading = this.selectedChild.isReading;
+        this.isPlaying = this.selectedChild.isPlaying;
         this.timer = this.timeToString(this.timermili);
         this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
         this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
         if (this.timermili === 0) {this.timesUp = true}
         if (this.timermili === this.MAXTIMER) {this.isMaxTime = true;}
+        if(this.isPlaying) {this.startPlaying()}
+        if(this.isReading) {this.startReading()}
       }, err => {
         this.message = 'erreur serveur : ' + err.message;
       });
@@ -88,26 +94,40 @@ setGaugeValue(gauge, value) : void {
   public onChange(value: any): void {
 
     if(value === 'add_child') {
+
       let childname = window.prompt('Veuillez entrer le nom de l‘enfant :');
-      this.childrenTime.push({name:childname, id:Math.round(Math.random()*100 + 5), timer:3600000});
+      if(childname !== null) {
+      
+        this.childrenTime.push({
+          name:childname, 
+          id:Math.round(Math.random()*100 + 5), 
+          timer:3600000,
+          isReading: false,
+          isPlaying:false,
+          playingStart: 0,
+          readingStart:0});
       this.selectedChild = this.childrenTime.filter(c => c.name === childname)[0];
       this.saveTimer();
       this.onChange(this.selectedChild);
+      
+    } else this.onChange(this.childrenTime[this.childrenTime.length - 1]);
     } else {
-
-      this.timesUp = false;
+      
+        this.timesUp = false;
         this.hasChanged = false;
-        this.timermiliHistory = [];
-        this.isReading = false;
-        this.isPlaying = false;
         this.selectedChild = value;
-        this.timermili = this.selectedChild.timer;
+        this.timermiliHistory = [];
+        this.isReading = this.selectedChild.isReading;
+        this.isPlaying = this.selectedChild.isPlaying;
+        this.timermili = value.timer;
           this.timer = this.timeToString(this.timermili);
           this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
           this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
           if (this.timermili === 0) {this.timesUp = true}
           if (this.timermili === this.MAXTIMER) {this.isMaxTime = true;}
           this.previousChild = this.selectedChild;
+          if(this.isPlaying) {this.startPlaying()}
+          if(this.isReading) {this.startReading()}
     }
     }
 
@@ -120,13 +140,24 @@ setGaugeValue(gauge, value) : void {
   }
 
   public startReading(): void {
+
+    if(this.selectedChild.readingStart === 0) {
+      this.hasChanged = true;
+      this.isReading = true;
+      this.selectedChild.isReading = true;
+      this.selectedChild.readingStart = Date.now();
+      this.saveTimer();
+     }
+
     this.hasChanged = true;
     this.timermiliHistory.push(this.timermili);
-    this.isReading = true;
+    this.selectedChild.isPlaying = false;
+    let originaltimer = this.timermili;
     this.timesUp = false;
     this.readingsub = this.second$.
     subscribe( tick => {
-      this.timermili += 1000;
+
+      this.timermili = originaltimer + (Date.now() -  this.selectedChild.readingStart);
       if (this.timermili >= this.MAXTIMER) {
         this.timermili = this.MAXTIMER;
         this.isMaxTime = true;
@@ -134,24 +165,57 @@ setGaugeValue(gauge, value) : void {
       }
       this.timer = this.timeToString(this.timermili);
       this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
+
+      if (Math.round(tick/10) === tick/10) {
+        
+        // check if reading has stopped server side
+
+        this.timersService.getTimerValue().subscribe(v => {
+
+          if(v.filter(i => i.name === this.selectedChild.name)[0].isReading === false) {
+            this.timermili = v.filter(i => i.name === this.selectedChild.name)[0].timer;
+            this.timer = this.timeToString(this.timermili);
+            this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
+            this.stopReading();
+          }
+
+        });
+
+
+      }
+
     });
+
   }
 
   public stopReading(): void {
-    this.hasChanged = true;
-    this.isReading = false;
+
     this.readingsub.unsubscribe();
+    this.isReading = false;
+    this.hasChanged = true;
+    this.selectedChild.isReading = false;
+    this.selectedChild.readingStart = 0;
+    this.saveTimer();
   }
 
   public startPlaying(): void {
+
+    if(this.selectedChild.playingStart === 0) {
+      this.hasChanged = true;
+      this.isPlaying = true;
+      this.selectedChild.isPlaying = true;
+      this.selectedChild.playingStart = Date.now();
+      this.saveTimer();
+    }
+
     this.isMaxTime = false;
     this.hasChanged = true;
     this.timermiliHistory.push(this.timermili);
-    this.isPlaying = true;
-    this.isReading = false;
+    let originaltimer = this.timermili;
+    this.selectedChild.isReading = false;
     this.playingsub = this.playseconds$.
     subscribe( tick => {
-      this.timermili -=1000;
+      this.timermili = originaltimer - (Date.now() - this.selectedChild.playingStart);
       if (this.timermili <= 0) {
         this.timermili = 0;
         this.timesUp = true;
@@ -159,13 +223,36 @@ setGaugeValue(gauge, value) : void {
       }
       this.timer = this.timeToString(this.timermili);
       this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
+
+      if (Math.round(tick/10) === tick/10) {
+        
+        // check if playing has stopped server side
+
+        this.timersService.getTimerValue().subscribe(v => {
+
+          if(v.filter(i => i.name === this.selectedChild.name)[0].isPlaying === false) {
+            this.timermili = v.filter(i => i.name === this.selectedChild.name)[0].timer;
+            this.timer = this.timeToString(this.timermili);
+            this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
+            this.stopPlaying();
+          }
+
+        });
+
+
+      }
+
+
     })
   }
 
   public stopPlaying(): void {
-    this.hasChanged = true;
-    this.isPlaying = false;
     this.playingsub.unsubscribe();
+    this.isPlaying = false;
+    this.hasChanged = true;
+    this.selectedChild.isPlaying = false;
+    this.selectedChild.playingStart = 0;
+    this.saveTimer();
   }
 
   public smallPenalty(): void {
@@ -199,6 +286,10 @@ setGaugeValue(gauge, value) : void {
     this.isMaxTime = false;
     this.timermiliHistory.push(this.timermili);
     this.timermili = 60 * 60 * 1000;
+    this.selectedChild.isPlaying = false;
+    this.isPlaying = false;
+    this.isReading = false;
+    this.selectedChild.isReading = false;
     this.timer = this.timeToString(this.timermili);
     this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
     this.hasChanged = true;
