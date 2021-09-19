@@ -71,6 +71,11 @@ setGaugeValue(gauge, value) : void {
       this.timersService.getTimerValue().subscribe(v => {
         this.childrenTime = v;
         this.selectedChild = this.childrenTime[0];
+        v.forEach(c => {
+          if(c.isPlaying || c.isReading) {
+            this.selectedChild = c;
+          }
+        });
         this.previousChild = this.selectedChild;
         this.timermili = this.selectedChild.timer;
         this.isReading = this.selectedChild.isReading;
@@ -92,6 +97,33 @@ setGaugeValue(gauge, value) : void {
   }
 
   public onChange(value: any): void {
+
+    this.timersService.getTimerValue().subscribe(
+      v => {
+        v.forEach(c => {
+          if (c.isReading || c.isPlaying) {
+
+            this.timesUp = false;
+            this.hasChanged = false;
+            this.selectedChild = c;
+            this.timermiliHistory = [];
+            this.isReading = this.selectedChild.isReading;
+            this.isPlaying = this.selectedChild.isPlaying;
+            this.timermili = this.selectedChild.timer;
+              this.timer = this.timeToString(this.timermili);
+              this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
+              this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
+              if (this.timermili === 0) {this.timesUp = true}
+              if (this.timermili === this.MAXTIMER) {this.isMaxTime = true;}
+              this.previousChild = this.selectedChild;
+              if(this.isPlaying) {this.startPlaying()}
+              if(this.isReading) {this.startReading()}
+              return;
+          }
+        })
+
+      }
+    );
 
     if(value === 'add_child') {
 
@@ -119,7 +151,7 @@ setGaugeValue(gauge, value) : void {
         this.timermiliHistory = [];
         this.isReading = this.selectedChild.isReading;
         this.isPlaying = this.selectedChild.isPlaying;
-        this.timermili = value.timer;
+        this.timermili = this.selectedChild.timer;
           this.timer = this.timeToString(this.timermili);
           this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
           this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
