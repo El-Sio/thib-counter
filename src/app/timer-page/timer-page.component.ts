@@ -102,24 +102,17 @@ setGaugeValue(gauge, value) : void {
       v => {
         v.forEach(c => {
           if (c.isReading || c.isPlaying) {
-
-            this.timesUp = false;
-            this.hasChanged = false;
-            this.selectedChild = c;
-            this.timermiliHistory = [];
-            this.isReading = this.selectedChild.isReading;
-            this.isPlaying = this.selectedChild.isPlaying;
-            this.timermili = this.selectedChild.timer;
-              this.timer = this.timeToString(this.timermili);
-              this.setGaugeValue(this.gaugeElement, (this.timermili / this.MAXTIMER));
-              this.message = 'donnée reçue : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
-              if (this.timermili === 0) {this.timesUp = true}
-              if (this.timermili === this.MAXTIMER) {this.isMaxTime = true;}
-              this.previousChild = this.selectedChild;
-              if(this.isPlaying) {this.startPlaying()}
-              if(this.isReading) {this.startReading()}
-              return;
+            // something has changed for another clid, reload
+            window.location.reload();
           }
+          this.childrenTime.forEach(e => {
+            if(e.name === c.name) {
+              if(e.timer !== c.timer) {
+                // you are not up to date, reload
+                window.location.reload();
+              }
+            }
+          });
         })
 
       }
@@ -169,6 +162,7 @@ setGaugeValue(gauge, value) : void {
     this.saveTimer();
     this.onChange(this.childrenTime[0]);
   }
+
   }
 
   public startReading(): void {
