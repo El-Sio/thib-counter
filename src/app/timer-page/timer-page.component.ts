@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
-import { tick } from '@angular/core/src/render3';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd } from '@angular/router';
+import { Location } from '@angular/common';
 import { interval } from 'rxjs';
 import { AppInitServiceService } from '../app-init-service.service';
 import { thibTimerValue } from '../data-model';
@@ -11,10 +13,11 @@ import { TimerServiceService } from '../timer-service.service';
   styleUrls: ['./timer-page.component.css']
 })
 
-export class TimerPageComponent implements OnInit {
+export class TimerPageComponent implements OnInit, OnDestroy {
 
   public timer = '';
   public timermili = 0
+  public childID = 0;
   public timermiliHistory : number[] =[]
   public historyIndex = 0;
   public message = '';
@@ -36,6 +39,7 @@ export class TimerPageComponent implements OnInit {
   public MAXTIMER = AppInitServiceService.settings.MAX_TIMER
   public gaugeElement = document.querySelector(".gauge");
   public thibTimer: thibTimerValue;
+  mySubscription: any;
 
 setGaugeValue(gauge, value) : void {
   if (value < 0 || value > 1) {
@@ -65,14 +69,42 @@ setGaugeValue(gauge, value) : void {
 
 }
 
-  constructor(public timersService : TimerServiceService) { }
+  constructor(public timersService : TimerServiceService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private location: Location) { 
+
+      this.router.routeReuseStrategy.shouldReuseRoute = function () {
+        return false;
+      };
+      this.mySubscription = this.router.events.subscribe((event) => {
+        if (event instanceof NavigationEnd) {
+          // Trick the Router into believing it's last link wasn't previously loaded
+          this.router.navigated = false;
+        }
+      });
+    }
+
+    ngOnDestroy(): void {
+      if (this.mySubscription) {
+        this.mySubscription.unsubscribe();
+      }
+    }
 
   ngOnInit() {
+
+    this.childID = parseInt(this.route.snapshot.paramMap.get('id'));
+    console.log(this.childID);
       this.timersService.getTimerValue().subscribe(v => {
         this.childrenTime = v;
-        this.selectedChild = this.childrenTime[0];
         v.forEach(c => {
           if(c.isPlaying || c.isReading) {
+            console.log('reading or playing elsewhere');
+            this.selectedChild = c;
+            this.childID = c.id;
+          }
+          if(c.id === this.childID) {
+            console.log('found chlid : ', c.name);
             this.selectedChild = c;
           }
         });
@@ -96,20 +128,29 @@ setGaugeValue(gauge, value) : void {
 
   }
 
-  public onChange(value: any): void {
 
+  public reload(): void {
+    this.redirectTo(this.location.path());
+  }
+
+  public redirectTo(uri: string) {
+    this.router.navigateByUrl('/', {skipLocationChange: true}).then(() =>
+    this.router.navigate([decodeURIComponent(uri)]));
+ }
+
+  public hasSomethingChanged(): void {
     this.timersService.getTimerValue().subscribe(
       v => {
         v.forEach(c => {
           if (c.isReading || c.isPlaying) {
-            // something has changed for another clid, reload
-            window.location.reload();
+            // something is happening for another clid, reload
+            this.redirectTo('/timer/'+ c.id);
           }
           this.childrenTime.forEach(e => {
             if(e.name === c.name) {
               if(e.timer !== c.timer) {
                 // you are not up to date, reload
-                window.location.reload();
+                this.redirectTo('/timer/' + c.id);
               }
             }
           });
@@ -117,6 +158,11 @@ setGaugeValue(gauge, value) : void {
 
       }
     );
+  }
+
+  public onChange(value: any): void {
+
+    this.hasSomethingChanged();
 
     if(value === 'add_child') {
 
@@ -133,11 +179,13 @@ setGaugeValue(gauge, value) : void {
           readingStart:0});
       this.selectedChild = this.childrenTime.filter(c => c.name === childname)[0];
       this.saveTimer();
-      this.onChange(this.selectedChild);
+      this.redirectTo('/timer/'+this.selectedChild.id);
       
-    } else this.onChange(this.childrenTime[this.childrenTime.length - 1]);
+    } else this.redirectTo('/timer/'+this.childrenTime[this.childrenTime.length - 1].id);
     } else {
-      
+
+      this.redirectTo('/timer/'+this.selectedChild.id);
+      /*
         this.timesUp = false;
         this.hasChanged = false;
         this.selectedChild = value;
@@ -152,7 +200,7 @@ setGaugeValue(gauge, value) : void {
           if (this.timermili === this.MAXTIMER) {this.isMaxTime = true;}
           this.previousChild = this.selectedChild;
           if(this.isPlaying) {this.startPlaying()}
-          if(this.isReading) {this.startReading()}
+          if(this.isReading) {this.startReading()} */
     }
     }
 
@@ -160,7 +208,7 @@ setGaugeValue(gauge, value) : void {
     if (window.confirm('êtes vous sûr de vouloir supprimer le compteur de '+ this.selectedChild.name + ' ?')) {
     this.childrenTime = this.childrenTime.filter(c => c.name !== this.selectedChild.name);
     this.saveTimer();
-    this.onChange(this.childrenTime[0]);
+    this.redirectTo('/timer/'+this.childrenTime[0].id);
   }
 
   }
@@ -273,6 +321,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   public stopPlaying(): void {
+
     this.playingsub.unsubscribe();
     this.isPlaying = false;
     this.hasChanged = true;
@@ -282,6 +331,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   public smallPenalty(): void {
+
     this.isMaxTime = false;
     this.timermiliHistory.push(this.timermili);
     this.timermili -= this.small * 60 * 1000;
@@ -295,6 +345,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   public smallBonus(): void {
+
     this.timesUp = false;
     this.timermiliHistory.push(this.timermili);
     this.timermili += this.small * 60 * 1000;
@@ -308,6 +359,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   public resetTimer(): void {
+
     this.timesUp = false;
     this.isMaxTime = false;
     this.timermiliHistory.push(this.timermili);
@@ -322,6 +374,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   public cancelChange(): void {
+
     this.historyIndex = this.timermiliHistory.length;
     if (this.timermiliHistory.length !==0 ) {
       this.timermili = this.timermiliHistory[this.historyIndex - 1];
@@ -338,7 +391,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   public saveTimer(): void {
-
+    
     this.childrenTime.forEach(c => {if(c.id === this.selectedChild.id) c.timer = this.timermili})
     let data = JSON.stringify(this.childrenTime);
     this.timersService.setTimerValue(data).subscribe(v => {

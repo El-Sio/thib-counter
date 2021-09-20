@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 
 import { AppComponent } from './app.component';
 import { TimerPageComponent } from './timer-page/timer-page.component';
+import { AppRoutingModule } from './app-routing.module';
 
 export function initializeApp(appInitService: AppInitServiceService) {
   return (): Promise<any> => {
@@ -21,7 +22,8 @@ export function initializeApp(appInitService: AppInitServiceService) {
   imports: [
     BrowserModule,
     HttpClientModule,
-    FormsModule
+    FormsModule,
+    AppRoutingModule
   ],
   providers: [
     AppInitServiceService,
