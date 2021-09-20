@@ -94,17 +94,14 @@ setGaugeValue(gauge, value) : void {
   ngOnInit() {
 
     this.childID = parseInt(this.route.snapshot.paramMap.get('id'));
-    console.log(this.childID);
       this.timersService.getTimerValue().subscribe(v => {
         this.childrenTime = v;
         v.forEach(c => {
           if(c.isPlaying || c.isReading) {
-            console.log('reading or playing elsewhere');
             this.selectedChild = c;
             this.childID = c.id;
           }
           if(c.id === this.childID) {
-            console.log('found chlid : ', c.name);
             this.selectedChild = c;
           }
         });
@@ -171,15 +168,14 @@ setGaugeValue(gauge, value) : void {
       
         this.childrenTime.push({
           name:childname, 
-          id:Math.round(Math.random()*100 + 5), 
+          id:this.childrenTime[this.childrenTime.length -1].id +1,
           timer:3600000,
           isReading: false,
           isPlaying:false,
           playingStart: 0,
           readingStart:0});
-      this.selectedChild = this.childrenTime.filter(c => c.name === childname)[0];
-      this.saveTimer();
-      this.redirectTo('/timer/'+this.selectedChild.id);
+          this.saveTimer();
+          this.redirectTo('/timer/'+this.childrenTime.filter(c => c.name === childname)[0].id);
       
     } else this.redirectTo('/timer/'+this.childrenTime[this.childrenTime.length - 1].id);
     } else {
@@ -391,7 +387,7 @@ setGaugeValue(gauge, value) : void {
   }
 
   public saveTimer(): void {
-    
+
     this.childrenTime.forEach(c => {if(c.id === this.selectedChild.id) c.timer = this.timermili})
     let data = JSON.stringify(this.childrenTime);
     this.timersService.setTimerValue(data).subscribe(v => {
