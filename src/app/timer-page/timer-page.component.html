@@ -33,7 +33,7 @@
 
 <div class = 'admin'>
   <button class="btn red" [disabled] = "isReading || isPlaying || timermiliHistory.length ===0 "  (click) = cancelChange()>Annuler ({{timermiliHistory.length}})</button>
-  <button class="btn play" [disabled] = " !hasChanged || isReading || isPlaying" (click) = saveTimer()>Enregistrer</button>
+  <button class="btn play" [disabled] = " !hasChanged || isReading || isPlaying" (click) = saveTime_withCheck()>Enregistrer</button>
 </div>
 
 <div class = 'message'>

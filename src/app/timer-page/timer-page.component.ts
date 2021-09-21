@@ -21,6 +21,7 @@ export class TimerPageComponent implements OnInit, OnDestroy {
   public timermiliHistory : number[] =[]
   public historyIndex = 0;
   public message = '';
+  public conflict_message = '';
   public hasChanged = false;
   public isReading = false;
   public timesUp = false;
@@ -136,23 +137,32 @@ setGaugeValue(gauge, value) : void {
  }
 
   public hasSomethingChanged(): void {
+    let modif = false;
     this.timersService.getTimerValue().subscribe(
       v => {
         v.forEach(c => {
           if (c.isReading || c.isPlaying) {
             // something is happening for another clid, reload
+            window.alert('donnée pas à jour pour ' + c.name);
             this.redirectTo('/timer/'+ c.id);
+            modif = true;
+            return;
           }
           this.childrenTime.forEach(e => {
             if(e.name === c.name) {
               if(e.timer !== c.timer) {
                 // you are not up to date, reload
+                window.alert('donnée pas à jour pour ' + e.name);
                 this.redirectTo('/timer/' + c.id);
+                modif = true;
+                return;
               }
             }
           });
-        })
-
+        });
+        if(!modif) {
+        return;
+        }
       }
     );
   }
@@ -397,6 +407,51 @@ setGaugeValue(gauge, value) : void {
     }, err => {
       this.message = 'erreur d‘enregistrement des données ' + err.message;
     });
+  }
+
+  public saveTime_withCheck(): void {
+
+    let modif = false;
+    // check server side
+    this.timersService.getTimerValue().subscribe(
+      
+      v => {
+        v.forEach(c => {
+          if (c.isReading || c.isPlaying) {
+            window.alert('donnée pas à jour pour ' + c.name);
+            // something is happening for another child, reload
+            this.redirectTo('/timer/'+ c.id);
+            modif = true;
+            return;
+          }
+          this.childrenTime.forEach(e => {
+            if(e.name === c.name) {
+              if(e.timer !== c.timer) {
+                window.alert('donnée pas à jour pour ' + e.name);
+                // you are not up to date, reload
+                this.redirectTo('/timer/' + c.id);
+                modif = true;
+                return;
+              }
+            }
+          });
+        });
+        if(!modif) {
+        // save current value locally
+    this.childrenTime.forEach(c => {if(c.id === this.selectedChild.id) c.timer = this.timermili})
+        // nothing changed except local change, save
+        this.conflict_message = '';
+        let data = JSON.stringify(this.childrenTime);
+        this.timersService.setTimerValue(data).subscribe(v => {
+          this.message = 'donnée enregistrée : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
+          this.hasChanged = false;
+          this.timermiliHistory = [];
+        }, err => {
+          this.message = 'erreur d‘enregistrement des données ' + err.message;
+        });
+      }
+      }
+    );
   }
 
   public timeToString(time: number): string {
