@@ -501,7 +501,55 @@ setGaugeValue(gauge, value) : void {
     });
   }
 
-  // Formatting function to transform milliseconds into a readble sentence
+  // This function is called using the manual "Enregistrer" (save) button
+  // Same implementation than savetimer, but checks for moficiations before
+  // combination of hassomethingchanged and savetimer
+  public saveTime_withCheck(): void {
+
+    let modif = false;
+    // check server side
+    this.timersService.getTimerValue().subscribe(
+      
+      v => {
+        v.forEach(c => {
+          if (c.isReading || c.isPlaying) {
+            window.alert('donnée pas à jour pour ' + c.name);
+            // something is happening for another child, reload
+            this.redirectTo('/timer/'+ c.id);
+            modif = true;
+            return;
+          }
+          this.childrenTime.forEach(e => {
+            if(e.name === c.name) {
+              if(e.timer !== c.timer) {
+                window.alert('donnée pas à jour pour ' + e.name);
+                // you are not up to date, reload
+                this.redirectTo('/timer/' + c.id);
+                modif = true;
+                return;
+              }
+            }
+          });
+        });
+        if(!modif) {
+        // save current value locally
+    this.childrenTime.forEach(c => {if(c.id === this.selectedChild.id) c.timer = this.timermili})
+        // nothing changed except local change, save data on the server
+        let data = JSON.stringify(this.childrenTime);
+        this.timersService.setTimerValue(data).subscribe(v => {
+          this.message = 'donnée enregistrée : ' + this.selectedChild.name + ' : ' + this.timeToString(this.timermili);
+          this.hasChanged = false;
+          this.timermiliHistory = [];
+        }, err => {
+          this.message = 'erreur d‘enregistrement des données ' + err.message;
+        });
+      }
+      }
+    );
+  }
+
+  // Time formatting fucntion
+  // transform millisecond timestamp into a readable sentence
   public timeToString(time: number): string {
 
     let hours = Math.floor(
